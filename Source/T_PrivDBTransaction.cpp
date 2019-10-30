@@ -1,184 +1,279 @@
-#include <T_SqlTableSelect.hpp>
-#include <tsectaskallocrow.hpp>
-#include <tsecusernamerow.hpp>
+// *******************************************
+//
+//	File:		T_PrivDBTransaction.cpp
+//
+//	Created:	13 August 2019
+//	Author:		Julio Calvo
+//
+// *******************************************
+
+#include <T_ExecuteSQL.hpp>
+#include <TSEC.h>
+#include "T_RowTreeDBFact.hpp"
 #include "T_PrivDBTransaction.hpp"
+#include "T_UpdateBlock.hpp"
+#include "T_RowDBFact.hpp"
 
-T_PrivDBTransaction::T_PrivDBTransaction(T_Database& rDatabase, bool bAutoCommit) : T_DBTransaction(rDatabase, bAutoCommit)
-{
-	reset();
-}
-
+T_PrivDBTransaction::T_PrivDBTransaction(T_Database& rDatabase, bool bAutoCommit) : T_BaseDBTransaction(rDatabase, bAutoCommit) {}
 T_PrivDBTransaction::~T_PrivDBTransaction() {}
 
-bool T_PrivDBTransaction::doExec()
+T_PrivUser T_PrivDBTransaction::deliverUserInfo(const QString& userName)
 {
-	switch (m_doExecAction)
-	{
-	case DELIVER_USER_INFO:
-		return doExec_deliverUserInfo();
-	case DELIVER_TASKS_IN_PROGRAM:
-		return doExec_deliverTasksInProgram();
-	case DELIVER_TASKS_ALLOC:
-		return doExec_deliverTaskAllocation();
-	default:
-		VERIFY(FALSE);
-		return false;
-	}
-}
+	T_PrivUser privUserObj(userName);
 
-T_PrivUser T_PrivDBTransaction::deliverUserInfo(const T_String& userName) {
-	T_PrivUser result(userName);
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	QVector<T_SECUsernameRow> rows;
+	T_SqlTableStatement sqlStatement;
 
-	m_doExecAction = DELIVER_USER_INFO;
-	m_pPrivUser = &result;
-	m_pUserName = &userName;
-	run();
-	reset();
+	sqlStatement.setTableName(SEC_USERNAME_NAME);
 
-	return result;
-}
-
-std::vector<T_PrivTask> T_PrivDBTransaction::deliverTasksInProgram(const T_TerRaProgram& program)
-{
-	std::vector<T_PrivTask> result;
-
-	m_doExecAction = DELIVER_TASKS_IN_PROGRAM;
-	m_pVectorPrivTask = &result;
-	m_pProgram = &program;
-	run();
-	reset();
-
-	return result;
-}
-
-T_PrivTaskAlloc T_PrivDBTransaction::deliverTaskAllocation(const T_String& userName, const T_TerRaProgram& program)
-{
-	T_PrivTaskAlloc result(userName);
-
-	m_doExecAction = DELIVER_TASKS_ALLOC;
-	m_pPrivTaskAlloc = &result;
-	m_pUserName = &userName;
-	m_pProgram = &program;
-	run();
-	reset();
-
-	return result;
-}
-
-void T_PrivDBTransaction::reset()
-{
-	m_doExecAction = UNKNOWN_DO_EXEC_ACTION;
-	m_pVectorPrivTask = nullptr;
-	m_pPrivTaskAlloc = nullptr;
-	m_pProgram = nullptr;
-	m_pUserName = nullptr;
-
-}
-
-bool T_PrivDBTransaction::doExec_deliverUserInfo() {
-
-	std::vector<T_SECUsernameRow> rows;
-	T_SqlTableSelect mySelect(database());
-	T_SqlTableStatement searchCriteria;
 	T_SqlFilter filter(QString::fromLatin1("username = ?"));
+	filter.appendBindValue(userName);
+	sqlStatement.setFilter(filter);
 
-	filter.appendBindValue(*m_pUserName);
-	searchCriteria.setTableName("sec_username");
-	searchCriteria.setFilter(filter);
+	aExecuteSQL.deliverRows(sqlStatement, rows);
 
-	mySelect.deliverRows(searchCriteria, rows);
-	m_pPrivUser->setFirstName(QVariant(rows.front().m_first_name).toString());
-	m_pPrivUser->setLastName(QVariant(rows.front().m_last_name).toString());
-	return true;
+	VERIFY(rows.size() <= 1);
+	if (!rows.empty())
+	{
+		privUserObj.setFirstName(QVariant(rows.front().first_name()).toString());
+		privUserObj.setLastName(QVariant(rows.front().last_name()).toString());
+		T_SrcUpdate srcObj(QVariant(rows.front().src_update()).toString());
+		T_DateUpdated dateObj(QVariant(rows.front().d_updated()).toDateTime());
+		T_UpdateBlock updateBlockObj(srcObj, dateObj);
+		privUserObj.setUpdateBlock(updateBlockObj);
+	}
+
+	return privUserObj;
 }
 
+QVector<T_PrivUser> T_PrivDBTransaction::deliverListOfUsers()
+{
+	QVector<T_PrivUser> listOfUsers;
+	QVector<T_SECUsernameRow> rows;
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	T_SqlTableStatement sqlStatement;
 
+	sqlStatement.setTableName(SEC_USERNAME_NAME);
+	aExecuteSQL.deliverRows(sqlStatement, rows);
 
-bool T_PrivDBTransaction::doExec_deliverTasksInProgram() {
-
-	PRECONDITION(!m_pProgram->isUnknown());
-
-	std::vector<T_SECTaskRow> rows;
-	T_SqlTableSelect mySelect(database());
-	T_SqlTableStatement searchCriteria;
-
-	T_SqlFilter filter(QString::fromLatin1("prog_name = ?"));
-	filter.appendBindValue(m_pProgram->getProgramStringName());
-
-	searchCriteria.setTableName("sec_task");
-	searchCriteria.setFilter(filter);
-
-	mySelect.deliverRows(searchCriteria, rows);
-	m_pVectorPrivTask->reserve(100);
-	for (auto element : rows) {
-		m_pVectorPrivTask->emplace_back(T_PrivTask(
-			T_PrivTaskName(QVariant(element.m_task_name).toString()),
-			T_TerRaProgram(QVariant(element.m_prog_name).toString()),
-			QVariant(element.m_task_desc).toString()));
-	}
-	return true;
-}
-
-
-
-bool T_PrivDBTransaction::doExec_deliverTaskAllocation() {
-
-	std::vector<T_SECTaskallocRow> rows;
-	T_SqlTableSelect mySelect(database());
-	T_SqlTableStatement searchCriteria;
-
-	T_SqlFilter filter(QString::fromLatin1("username= ?"));
-	filter.appendBindValue(*m_pUserName);
-
-	searchCriteria.setTableName("sec_taskalloc");
-	searchCriteria.setFilter(filter);
-	mySelect.deliverRows(searchCriteria, rows);
-	for (auto element : rows) {
-		T_PrivTaskName taskNameObj(QVariant(element.m_task_name).toString());
-		T_PrivTask taskObj(taskNameObj);
-		m_pPrivTaskAlloc->getListOfTasks().emplace_back(taskObj);
-	}
-	if (m_pProgram->isUnknown()) return true;
-
-	/*Can't launch other commit because: 
-	PRECONDITION(m_iTransInProgressCounter == 0); In terrabase.cpp line 144
-
-	Otherwise, this could work:
-	std::vector<T_PrivTask> vectorOfTaskInProgram;
-	vectorOfTaskInProgram = deliverTasksInProgram(m_pProgram->getProgramName());
-
-	Need to rewrite again deliverTaskInProgram*/
-
-	std::vector<T_SECTaskRow> rowsSec;
-	T_SqlTableSelect mySelectSec(database());
-	T_SqlTableStatement searchCriteriaSec;
-
-	T_SqlFilter filterSec(QString::fromLatin1("prog_name = ?"));
-	filterSec.appendBindValue(m_pProgram->getProgramStringName());
-
-	searchCriteriaSec.setTableName("sec_task");
-	searchCriteriaSec.setFilter(filterSec);
-	mySelectSec.deliverRows(searchCriteriaSec, rowsSec);
-
-	std::vector<T_PrivTask> vectorOfTaskInProgram;
-	vectorOfTaskInProgram.reserve(100);
-	if (rowsSec.empty()) return false;
-	for (auto element : rowsSec) {
-		vectorOfTaskInProgram.emplace_back(T_PrivTask(
-			T_PrivTaskName(QVariant(element.m_task_name).toString()),
-			T_TerRaProgram(QVariant(element.m_prog_name).toString()),
-			QVariant(element.m_task_desc).toString()));
-	}
-
-	//Having two vectors: one with the task related to user, one with the task related to program. Get list of tasks.
-	std::list<T_PrivTask> auxList(m_pPrivTaskAlloc->getListOfTasks());
-	for (auto element : m_pPrivTaskAlloc->getListOfTasks()) {
-		auto it = std::find(vectorOfTaskInProgram.begin(), vectorOfTaskInProgram.end(), element);
-		if (it == vectorOfTaskInProgram.end()) {
-			auxList.remove(element);
+	if (!rows.empty())
+	{
+		for (auto element : rows)
+		{
+			listOfUsers.push_back(deliverUserInfo((QVariant(element.username()).toString())));
 		}
 	}
-	m_pPrivTaskAlloc->getListOfTasks() = auxList;
+
+	return listOfUsers;
+}
+
+QVector<T_PrivUser> T_PrivDBTransaction::deliverListOfUserInTask(const QString& taskName)
+{
+	QVector<T_PrivUser> vUsers;
+	QVector<T_SECTaskallocRow> rows;
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	T_SqlTableStatement sqlStatement;
+
+	sqlStatement.setTableName(SEC_TASKALLOC_NAME);
+
+	T_SqlFilter filter(QString::fromLatin1("task_name = ?"));
+	filter.appendBindValue(taskName);
+	sqlStatement.setFilter(filter);
+
+	aExecuteSQL.deliverRows(sqlStatement, rows);
+
+	if (!rows.empty())
+	{
+		for (auto element : rows)
+		{
+			vUsers.push_back(deliverUserInfo((QVariant(element.username()).toString())));
+		}
+	}
+
+	return vUsers;
+
+}
+
+QMultiMap<T_TerRaProgram, T_PrivTask> T_PrivDBTransaction::deliverListOfTasks()
+{
+	QMultiMap<T_TerRaProgram, T_PrivTask> aMap;
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	QVector<T_SECTaskRow> rows;
+	T_SqlTableStatement sqlStatement;
+
+	sqlStatement.setTableName(SEC_TASK_NAME);
+	aExecuteSQL.deliverRows(sqlStatement, rows);
+
+	if (!rows.empty())
+	{
+		for (auto element : rows)
+		{
+			T_TerRaProgram pr = T_String(element.prog_name().toString());
+			T_PrivTaskName name = T_String(element.task_name().toString());
+			QString desc = element.task_desc().toString();
+			T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
+			T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+			T_UpdateBlock updateBlockObj(srcObj, dateObj);
+			T_PrivTask privTaskObj(name, pr, desc);
+			privTaskObj.setUpdateBlock(updateBlockObj);
+			aMap.insert(pr, privTaskObj);
+		}
+	}
+
+	return aMap;
+}
+
+
+QSet<QString> T_PrivDBTransaction::deliverListOfPrograms()
+{
+	QSet<QString> setString;
+
+	QVector<T_SECTaskRow> rows;
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	T_SqlTableStatement sqlStatement;
+
+	sqlStatement.setTableName(SEC_TASK_NAME);
+	aExecuteSQL.deliverRows(sqlStatement, rows);
+
+	if (!rows.empty())
+	{
+		for (auto element : rows)
+		{
+			setString.insert(QVariant(element.prog_name()).toString());
+		}
+	}
+
+	return setString;
+}
+
+
+
+QVector<T_PrivTask> T_PrivDBTransaction::deliverTasksInProgram(const T_TerRaProgram& rProgram)
+{
+
+	PRECONDITION(!rProgram.isUnknown());
+
+	QVector<T_PrivTask> allowedTasks;
+	QVector<T_SECTaskRow> rows;
+	T_ExecuteSQL aExecuteSQL(database(), isAutoCommit());
+	T_SqlTableStatement searchCriteria;
+	T_SqlFilter filter(QString::fromLatin1("prog_name = ?"));
+
+	filter.appendBindValue(rProgram.asDBString());
+	searchCriteria.setTableName(SEC_TASK_NAME);
+	searchCriteria.setFilter(filter);
+	aExecuteSQL.deliverRows(searchCriteria, rows);
+
+	allowedTasks.reserve(100);
+	for (auto element : rows) {
+		T_TerRaProgram pr = T_String(element.prog_name().toString());
+		T_PrivTaskName name = T_String(element.task_name().toString());
+		QString desc = element.task_desc().toString();
+		T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
+		T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+		T_UpdateBlock updateBlockObj(srcObj, dateObj);
+		T_PrivTask privTaskObj(name, pr, desc);
+		privTaskObj.setUpdateBlock(updateBlockObj);
+		allowedTasks.push_back(privTaskObj);
+	}
+	return allowedTasks;
+}
+
+QVector<T_PrivTaskAlloc> T_PrivDBTransaction::deliverTaskAllocationAllUsers()
+{
+	QVector<T_PrivTaskAlloc> result;
+	QVector<T_PrivUser> vectorUsers = deliverListOfUsers();
+	for (auto user : vectorUsers)
+	{
+		result.push_back(deliverTaskAllocation(user.getUserName()));
+	}
+	return result;
+}
+
+T_PrivTaskAlloc T_PrivDBTransaction::deliverTaskAllocation(const QString& rPrivUser, const T_TerRaProgram& rProgram)
+{
+	T_PrivTaskAlloc result(rPrivUser);
+	runWithinTransaction(this, &T_PrivDBTransaction::doExec_deliverTaskAllocation, rPrivUser, rProgram, result);
+	return result;
+}
+
+bool T_PrivDBTransaction::doExec_deliverTaskAllocation(const QString& rUserName, const T_TerRaProgram& rProgram, T_PrivTaskAlloc& rPrivTaskAlloc) {
+
+	QVector<T_SECTaskRow> rows;
+	T_ExecuteSQL mySelect(database(), false);
+	T_SqlTableStatement searchCriteria;
+	T_SqlFilter filter;
+
+	if (!rProgram.isUnknown())
+	{
+		filter.setFilter(QString::fromLatin1("prog_name = :prog_name AND task_name IN (SELECT task_name FROM sec_taskalloc WHERE username = :username)"));
+		filter.appendNamedBindValue(":username", rUserName);
+		filter.appendNamedBindValue(":prog_name", rProgram.asDBString());
+	}
+	else
+	{
+		filter.setFilter(QString::fromLatin1("task_name IN (SELECT task_name FROM sec_taskalloc WHERE username = :username)"));
+		filter.appendNamedBindValue(":username", rUserName);
+	}
+
+	searchCriteria.setTableName(SEC_TASK_NAME);
+	searchCriteria.setFilter(filter);
+	mySelect.deliverRows(searchCriteria, rows);
+
+	T_PrivDBTransaction aDBTransaction(database(), false);
+	T_PrivUser privUserObj = aDBTransaction.deliverUserInfo(rUserName);
+	rPrivTaskAlloc.setPrivUser(privUserObj);
+
+	for (auto element : rows) {
+		T_PrivTaskName taskNameObj(QVariant(element.task_name()).toString());
+		T_TerRaProgram programObj(QVariant(element.prog_name()).toString());
+		T_PrivTask privTaskObj(taskNameObj, programObj);
+		T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
+		T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+		T_UpdateBlock updateBlockObj(srcObj, dateObj);
+		privTaskObj.setTaskDescription(QVariant(element.task_desc()).toString());
+		privTaskObj.setUpdateBlock(updateBlockObj);
+		rPrivTaskAlloc.appendAllowedTask(privTaskObj);
+	}
 
 	return true;
 }
+
+void T_PrivDBTransaction::updateTasksUser(const QVector<QString>& tasksToDB, const QVector<QString>& tasksFromDB,
+										  const QString & rUserName, const T_DateUpdatedRecycleCondition& rcRecycleCondition)
+{
+	runWithinTransaction(this, &T_PrivDBTransaction::doExec_updateTasksUser, tasksToDB, tasksFromDB, rUserName, rcRecycleCondition);
+}
+bool T_PrivDBTransaction::doExec_updateTasksUser(const QVector<QString>& tasksToDB, const QVector<QString>& tasksFromDB, 
+												 const QString & rUserName, const T_DateUpdatedRecycleCondition& rcRecycleCondition)
+{
+	T_RowDBFact aRowDBFact(database(), false);
+	T_SECUsernameRow newRow;
+	newRow.set_src_update(T_Database::getSrcUpdateFromProgramName());
+	newRow.set_d_updated(QDateTime::currentDateTime());
+	T_SECUsernameRow filterRow;
+	filterRow.set_username(rUserName);
+	bool ok = aRowDBFact.execSqlUpdate(newRow, filterRow, rcRecycleCondition);
+	if (ok)
+	{
+		for (auto task : tasksToDB) {
+			T_SECTaskallocRow filterAllocRow;
+			filterAllocRow.set_username(rUserName);
+			filterAllocRow.set_task_name(task);
+			aRowDBFact.execSqlInsert(filterAllocRow);
+		}
+
+		for (auto task : tasksFromDB) {
+			T_SECTaskallocRow filterAllocRow;
+			filterAllocRow.set_username(rUserName);
+			filterAllocRow.set_task_name(task);
+			aRowDBFact.execSqlDelete(filterAllocRow);
+		}
+	}
+	return true;
+}
+
+
+
+

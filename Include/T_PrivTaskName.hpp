@@ -1,3 +1,12 @@
+// *******************************************
+//
+//	File:		T_PrivTaskName.hpp
+//
+//	Created:	13 August 2019
+//	Author:		Julio Calvo
+//
+// *******************************************
+
 #pragma once
 
 #include "tstring.hpp"
@@ -6,14 +15,24 @@
 
 T_CLASSDEF(T_PrivTaskName)
 
-class T_TERRAPRIVILEGELIBDEF_CLASS T_PrivTaskName {
+class T_TERRAPRIVILEGELIBDEF_CLASS T_PrivTaskName : public T_Sortable {
 public:
-	T_PrivTaskName(const T_String& taskName);
+	T_PrivTaskName();
+	T_PrivTaskName(const QString& taskName);
 	virtual ~T_PrivTaskName();
 
-	T_String getTaskName() const;
-	void setTaskName(const T_String& taskName);
+	const QString &getTaskName() const;
+	void setTaskName(const QString& taskName);
+
+protected:
+	virtual T_BOOL isEqual(const T_Object& compObject) const;
+	virtual T_BOOL isLessThan(const T_Object& compObject) const;
+	// archiving
+	virtual void writeTo(T_OSTREAM& out) const;
+	virtual void readFrom(T_ISTREAM& in);
+	// formatting in strings
+	virtual void asString(T_String& sout) const;
 
 private:
-	T_String m_TaskName;
+	QString m_TaskName;
 };

@@ -1,3 +1,11 @@
+// *******************************************
+//
+//	File:		TerRaPrivilegeLib.hpp
+//
+//	Created:	13 August 2019
+//	Author:		Julio Calvo
+//
+// *******************************************
 
 #pragma once
 
