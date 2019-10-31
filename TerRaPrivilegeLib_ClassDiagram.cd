@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="T_PrivDBTransaction" Collapsed="true">
+    <Position X="1.25" Y="0.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAAAICAIAAAAAAAAAAAAAAAAAAQAAAABAAQgAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_PrivDBTransaction.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="T_PrivTask" Collapsed="true">
+    <Position X="5.25" Y="0.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAEAAQFAEAABAAIAAAAIAAAMAAAIAAAJAAQQAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_PrivTask.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="T_PrivTaskAlloc" Collapsed="true">
+    <Position X="9.25" Y="0.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>CIAAAAAAAAARAEIAAIAIAAAAAAAIMAAABAQIJAAAAAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_PrivTaskAlloc.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="T_PrivTaskName" Collapsed="true">
+    <Position X="1.25" Y="2.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEAAABAAAABAAIAAAAAAAQMAAAAABAIABAAAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_PrivTaskName.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="T_PrivUser" Collapsed="true">
+    <Position X="5.25" Y="2.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAEIAABAAQEABAIAIEAAAAAMAAAAAIAJEAQAAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_PrivUser.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="T_TerRaProgram" Collapsed="true">
+    <Position X="9.25" Y="2.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AJAAEAAAAAABAAAAAAAIAAAAAAAQMDAAAAMAJAAAAAA=</HashCode>
+      <FileName>C:\TerRaSys\TerRaPrivilegeLib\include\T_TerRaProgram.hpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
