@@ -48,7 +48,7 @@ void T_PrivTaskAlloc::setAllowedTasks(const QList<T_PrivTask>& listTasks)
 
 bool T_PrivTaskAlloc::isTaskAllowed(const T_PrivTaskName& privTaskName) const
 {
-	PRECONDITION(!m_AllowedTasks.empty());
+	PRECONDITION(!isUnknown());
 	for (auto it = m_AllowedTasks.begin(); it != m_AllowedTasks.end(); ++it) {
 		if ((*it).getPrivTaskName().getTaskName() == privTaskName.getTaskName()) return true;
 	}

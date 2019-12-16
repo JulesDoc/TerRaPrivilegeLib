@@ -36,10 +36,10 @@ T_PrivUser T_PrivDBTransaction::deliverUserInfo(const QString& userName)
 	VERIFY(rows.size() <= 1);
 	if (!rows.empty())
 	{
-		privUserObj.setFirstName(QVariant(rows.front().first_name()).toString());
-		privUserObj.setLastName(QVariant(rows.front().last_name()).toString());
-		T_SrcUpdate srcObj(QVariant(rows.front().src_update()).toString());
-		T_DateUpdated dateObj(QVariant(rows.front().d_updated()).toDateTime());
+		privUserObj.setFirstName(QVariant(rows.front().get_first_name()).toString());
+		privUserObj.setLastName(QVariant(rows.front().get_last_name()).toString());
+		T_SrcUpdate srcObj(QVariant(rows.front().get_src_update()).toString());
+		T_DateUpdated dateObj(QVariant(rows.front().get_d_updated()).toDateTime());
 		T_UpdateBlock updateBlockObj(srcObj, dateObj);
 		privUserObj.setUpdateBlock(updateBlockObj);
 	}
@@ -61,7 +61,7 @@ QVector<T_PrivUser> T_PrivDBTransaction::deliverListOfUsers()
 	{
 		for (auto element : rows)
 		{
-			listOfUsers.push_back(deliverUserInfo((QVariant(element.username()).toString())));
+			listOfUsers.push_back(deliverUserInfo((QVariant(element.get_username()).toString())));
 		}
 	}
 
@@ -87,7 +87,7 @@ QVector<T_PrivUser> T_PrivDBTransaction::deliverListOfUserInTask(const QString& 
 	{
 		for (auto element : rows)
 		{
-			vUsers.push_back(deliverUserInfo((QVariant(element.username()).toString())));
+			vUsers.push_back(deliverUserInfo((QVariant(element.get_username()).toString())));
 		}
 	}
 
@@ -109,11 +109,11 @@ QMultiMap<T_TerRaProgram, T_PrivTask> T_PrivDBTransaction::deliverListOfTasks()
 	{
 		for (auto element : rows)
 		{
-			T_TerRaProgram pr = T_String(element.prog_name().toString());
-			T_PrivTaskName name = T_String(element.task_name().toString());
-			QString desc = element.task_desc().toString();
-			T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
-			T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+			T_TerRaProgram pr = T_String(element.get_prog_name().toString());
+			T_PrivTaskName name = T_String(element.get_task_name().toString());
+			QString desc = element.get_task_desc().toString();
+			T_SrcUpdate srcObj(QVariant(element.get_src_update()).toString());
+			T_DateUpdated dateObj(QVariant(element.get_d_updated()).toDateTime());
 			T_UpdateBlock updateBlockObj(srcObj, dateObj);
 			T_PrivTask privTaskObj(name, pr, desc);
 			privTaskObj.setUpdateBlock(updateBlockObj);
@@ -140,7 +140,7 @@ QSet<QString> T_PrivDBTransaction::deliverListOfPrograms()
 	{
 		for (auto element : rows)
 		{
-			setString.insert(QVariant(element.prog_name()).toString());
+			setString.insert(QVariant(element.get_prog_name()).toString());
 		}
 	}
 
@@ -167,11 +167,11 @@ QVector<T_PrivTask> T_PrivDBTransaction::deliverTasksInProgram(const T_TerRaProg
 
 	allowedTasks.reserve(100);
 	for (auto element : rows) {
-		T_TerRaProgram pr = T_String(element.prog_name().toString());
-		T_PrivTaskName name = T_String(element.task_name().toString());
-		QString desc = element.task_desc().toString();
-		T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
-		T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+		T_TerRaProgram pr = T_String(element.get_prog_name().toString());
+		T_PrivTaskName name = T_String(element.get_task_name().toString());
+		QString desc = element.get_task_desc().toString();
+		T_SrcUpdate srcObj(QVariant(element.get_src_update()).toString());
+		T_DateUpdated dateObj(QVariant(element.get_d_updated()).toDateTime());
 		T_UpdateBlock updateBlockObj(srcObj, dateObj);
 		T_PrivTask privTaskObj(name, pr, desc);
 		privTaskObj.setUpdateBlock(updateBlockObj);
@@ -226,13 +226,13 @@ bool T_PrivDBTransaction::doExec_deliverTaskAllocation(const QString& rUserName,
 	rPrivTaskAlloc.setPrivUser(privUserObj);
 
 	for (auto element : rows) {
-		T_PrivTaskName taskNameObj(QVariant(element.task_name()).toString());
-		T_TerRaProgram programObj(QVariant(element.prog_name()).toString());
+		T_PrivTaskName taskNameObj(QVariant(element.get_task_name()).toString());
+		T_TerRaProgram programObj(QVariant(element.get_prog_name()).toString());
 		T_PrivTask privTaskObj(taskNameObj, programObj);
-		T_SrcUpdate srcObj(QVariant(element.src_update()).toString());
-		T_DateUpdated dateObj(QVariant(element.d_updated()).toDateTime());
+		T_SrcUpdate srcObj(QVariant(element.get_src_update()).toString());
+		T_DateUpdated dateObj(QVariant(element.get_d_updated()).toDateTime());
 		T_UpdateBlock updateBlockObj(srcObj, dateObj);
-		privTaskObj.setTaskDescription(QVariant(element.task_desc()).toString());
+		privTaskObj.setTaskDescription(QVariant(element.get_task_desc()).toString());
 		privTaskObj.setUpdateBlock(updateBlockObj);
 		rPrivTaskAlloc.appendAllowedTask(privTaskObj);
 	}

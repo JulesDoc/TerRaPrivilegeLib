@@ -10,7 +10,6 @@
 #pragma once
 
 #include "tstring.hpp"
-#include "TSORTABL.hpp"
 #include "QString"
 #include "T_UpdateBlock.hpp"
 #include "TerRaPrivilegeLib.hpp"

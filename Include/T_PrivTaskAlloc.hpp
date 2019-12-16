@@ -2,6 +2,8 @@
 //
 //	File:		T_PrivTaskAlloc.hpp
 //
+//  This task represents an union of User and list of Task that the user has the rights to execute. 
+//
 //	Created:	13 August 2019
 //	Author:		Julio Calvo
 //
@@ -10,7 +12,6 @@
 #pragma once
 
 #include "tstring.hpp"
-#include "TSORTABL.hpp"
 #include "TerRaPrivilegeLib.hpp"
 #include "T_PrivUser.hpp"
 #include "T_PrivTask.hpp"

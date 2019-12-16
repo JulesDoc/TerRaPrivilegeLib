@@ -2,6 +2,8 @@
 //
 //	File:		T_PrivTask.hpp
 //
+//  This class represents a Task which is composed by a name, a TerRaProgram and a descriiption
+//
 //	Created:	13 August 2019
 //	Author:		Julio Calvo
 //
@@ -14,7 +16,7 @@
 #include <vector>
 
 #include "tstring.hpp"
-#include "TSORTABL.hpp"
+#include "T_Sortable.hpp"
 #include "T_PrivTaskName.hpp"
 #include "TerRaPrivilegeLib.hpp"
 #include "T_TerRaProgram.hpp"

@@ -2,6 +2,8 @@
 //
 //	File:		T_PrivTaskName.hpp
 //
+//  This Task represents the name of a Task, it is used within the class Task as an attribute
+//
 //	Created:	13 August 2019
 //	Author:		Julio Calvo
 //
@@ -10,7 +12,7 @@
 #pragma once
 
 #include "tstring.hpp"
-#include "TSORTABL.hpp"
+#include "T_Sortable.hpp"
 #include "TerRaPrivilegeLib.hpp"
 
 T_CLASSDEF(T_PrivTaskName)

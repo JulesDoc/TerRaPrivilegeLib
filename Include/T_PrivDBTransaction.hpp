@@ -2,6 +2,8 @@
 //
 //	File:		T_PrivDBTransaction.hpp
 //
+//  This class represents transactions that deliver or update date to/from the Database
+//
 //	Created:	13 August 2019
 //	Author:		Julio Calvo
 //
